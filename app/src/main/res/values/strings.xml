@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Pholed</string>
+    <string name="start">BAŞLA</string>
+    <string name="background_color">Arka plan:</string>
+    <string name="text_color">Yazı Rengi:</string>
+    <string name="empty_text_toast">Yazı alanı boş olamaz.</string>
+    <string name="speed">Hız:</string>
+    <string name="x_symbol">x</string>
+
+</resources>
