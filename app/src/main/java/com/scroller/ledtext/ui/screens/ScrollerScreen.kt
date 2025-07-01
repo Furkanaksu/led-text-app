@@ -47,6 +47,7 @@ import com.scroller.ledtext.helpers.LedFont
 import com.scroller.ledtext.helpers.SCROLLER_TEXT_DATASTORE_NAME
 import com.scroller.ledtext.helpers.TEXT_COLOR_DATASTORE_NAME
 import com.scroller.ledtext.helpers.utils.calculateOffset
+import com.scroller.ledtext.ui.navigation.SelectedFont
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
@@ -209,7 +210,7 @@ fun ScrollerScreen(
                             scrollOffset = scrollOffset
                         )
                     ),
-                fontFamily = LedFont
+                fontFamily = SelectedFont.selectedFont
             )
         }
     }

@@ -13,25 +13,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scroller.ledtext.helpers.LedFont
 import com.scroller.ledtext.helpers.utils.calculateOffset
 
 @Composable
-fun MovingText(text: String, usedTextColor: Long, screenWidth: Int, textWidth: Int, speed: Float) {
+fun MovingText(
+    text: String,
+    usedTextColor: Long,
+    screenWidth: Int,
+    textWidth: Int,
+    speed: Float,
+    selectedFont : FontFamily = LedFont
+) {
 
     val infiniteTransition = rememberInfiniteTransition(label = "")
 
     val scrollOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
+        initialValue = 0f, targetValue = 1f, animationSpec = infiniteRepeatable(
             animation = tween(
                 durationMillis = (((text.length * 300) + 4000) * 1 / speed).toInt(),
                 easing = LinearEasing
-            ),
-            repeatMode = RepeatMode.Restart
+            ), repeatMode = RepeatMode.Restart
         ), label = ""
     )
 
@@ -49,7 +54,7 @@ fun MovingText(text: String, usedTextColor: Long, screenWidth: Int, textWidth: I
                     scrollOffset = scrollOffset
                 )
             ),
-        fontFamily = LedFont
+        fontFamily = selectedFont
     )
 
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.scroller.ledtext.helpers.LedFont
 import com.scroller.ledtext.ui.screens.ScrollerScreen
 import com.scroller.ledtext.ui.screens.edit.EditScreen
 
@@ -46,6 +47,10 @@ sealed class Screens(
     )
 
     data object Scroller : Screens(
-        route = "Scroller/{length}/{speed}"
+        route = "Scroller/{length}/{speed}",
     )
+}
+
+object SelectedFont {
+     var selectedFont = LedFont
 }

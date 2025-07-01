@@ -6,6 +6,7 @@ import android.content.pm.ActivityInfo
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,20 +14,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,11 +45,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -65,6 +66,7 @@ import com.scroller.ledtext.helpers.LedFont
 import com.scroller.ledtext.helpers.SCROLLER_TEXT_DATASTORE_NAME
 import com.scroller.ledtext.helpers.SPEED_TEXT_DATASTORE_NAME
 import com.scroller.ledtext.helpers.TEXT_COLOR_DATASTORE_NAME
+import com.scroller.ledtext.ui.navigation.SelectedFont
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -102,6 +104,12 @@ fun EditScreen(
     var textInputState by rememberSaveable {
         mutableStateOf("")
     }
+
+    var selectedFont by remember {
+        mutableStateOf(LedFont)
+    }
+
+    val systemUiController = rememberSystemUiController()
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -146,11 +154,9 @@ fun EditScreen(
         }
     }
 
-    val systemUiController = rememberSystemUiController()
     with(systemUiController) {
-        setStatusBarColor(MaterialTheme.colorScheme.primary)
-        setNavigationBarColor(MaterialTheme.colorScheme.background)
-        statusBarDarkContentEnabled = true
+        setStatusBarColor(Color.Transparent)
+        statusBarDarkContentEnabled = false
         navigationBarDarkContentEnabled = false
     }
 
@@ -167,7 +173,12 @@ fun EditScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(color = Color(usedBackgroundColorState.toULong()))
+                    .height(200.dp)
+                    .padding(20.dp)
+                    .background(
+                        color = Color(usedBackgroundColorState.toULong()),
+                        shape = RoundedCornerShape(16.dp)
+                    )
                     .border(
                         width = 2.dp,
                         color = Color(Colors.BLACK.color.value.toLong()),
@@ -175,7 +186,8 @@ fun EditScreen(
                     .horizontalScroll(
                         rememberScrollState(),
                         enabled = false
-                    )
+                    ),
+                verticalAlignment = Alignment.CenterVertically
             ) {
 
                 key(textInputState, usedSpeed) {
@@ -184,7 +196,8 @@ fun EditScreen(
                         usedTextColor = usedTextColorState,
                         screenWidth = screenWidth,
                         textWidth = textWidthState.value.toInt(),
-                        speed = usedSpeed
+                        speed = usedSpeed,
+                        selectedFont = selectedFont
                     )
                 }
             }
@@ -192,7 +205,7 @@ fun EditScreen(
             OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 40.dp),
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
                 value = textInputState,
                 onValueChange = { newValue ->
                     textInputState = newValue
@@ -203,85 +216,31 @@ fun EditScreen(
                 placeholder = { Text("Buraya yazın...") } // Hint burada
             )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
 
-                Text(
-                    modifier = Modifier.padding(16.dp),
-                    text = stringResource(R.string.speed),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    items(4) { index ->
-                        val speed = speedList[index]
-                        RadioButtonItem(value = speed, isSelected = usedSpeed == speed) {
-                            usedSpeed = speed
-                            coroutineScope.launch(Dispatchers.IO) {
-                                context.dataStore.edit { prefs ->
-                                    prefs[usedSpeedKey] = speed
-                                }
-                            }
-                        }
-                    }
+            SpeedView(
+                usedSpeedKey = usedSpeedKey,
+                usedSpeed = usedSpeed,
+                onSpeedChange = {
+                    usedSpeed = it
                 }
-            }
+            )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    modifier = Modifier.padding(16.dp),
-                    text = stringResource(R.string.text_color),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                LazyRow {
-                    item {
-                        val color = Colors.entries.first().color
-                        ColorItem(
-                            isFirst = true, color = color,
-                            isSelected = usedTextColorState == color.value.toLong()
-                        ) {
-                            coroutineScope.launch(Dispatchers.IO) {
-                                context.dataStore.edit { prefs ->
-                                    prefs[usedTextColorKey] = color.value.toLong()
-                                }
-                            }
-                            usedTextColorState = color.value.toLong()
-                        }
-                    }
-
-                    items(Colors.entries.size - 1) { index ->
-                        val color = Colors.entries[index + 1].color
-                        ColorItem(
-                            color = color,
-                            isSelected = usedTextColorState == color.value.toLong()
-                        ) {
-                            coroutineScope.launch(Dispatchers.IO) {
-                                context.dataStore.edit { prefs ->
-                                    prefs[usedTextColorKey] = color.value.toLong()
-                                }
-                            }
-                            usedTextColorState = color.value.toLong()
-                        }
-                    }
+            TextFontView(
+                selectedFont = LedFont,
+                onFontSelected = {
+                    SelectedFont.selectedFont = it
+                    selectedFont = it
                 }
-            }
+            )
+
+            TextColorView(
+                usedTextColorKey = usedTextColorKey,
+                usedTextColorState = usedTextColorState,
+                onColorChange = {
+                    usedTextColorState = it
+                }
+            )
+
 
             Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -295,7 +254,6 @@ fun EditScreen(
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 LazyRow {
-
                     item {
                         val color = Colors.entries.first().color
                         ColorItem(
@@ -352,6 +310,165 @@ fun EditScreen(
                 fontWeight = FontWeight.Medium,
                 fontSize = 20.sp
             )
+        }
+    }
+}
+
+@Composable
+fun SpeedView(
+    usedSpeedKey: Preferences.Key<Float>,
+    usedSpeed: Float,
+    onSpeedChange : (Float) -> Unit
+){
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            text = stringResource(R.string.speed),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Black,
+                fontSize = 20.sp
+            ),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            items(4) { index ->
+                val speed = speedList[index]
+                RadioButtonItem(value = speed, isSelected = usedSpeed == speed) {
+                    onSpeedChange(speed)
+                    coroutineScope.launch(Dispatchers.IO) {
+                        context.dataStore.edit { prefs ->
+                            prefs[usedSpeedKey] = speed
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TextColorView(
+    usedTextColorKey: Preferences.Key<Long>,
+    usedTextColorState : Long,
+    onColorChange : (Long) -> Unit,
+){
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            modifier = Modifier.padding(16.dp),
+            text = stringResource(R.string.text_color),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Black,
+                fontSize = 20.sp
+            ),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        LazyRow {
+            item {
+                val color = Colors.entries.first().color
+                ColorItem(
+                    isFirst = true, color = color,
+                    isSelected = usedTextColorState == color.value.toLong()
+                ) {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        context.dataStore.edit { prefs ->
+                            prefs[usedTextColorKey] = color.value.toLong()
+                        }
+                    }
+                    onColorChange(color.value.toLong())
+                }
+            }
+
+            items(Colors.entries.size - 1) { index ->
+                val color = Colors.entries[index + 1].color
+                ColorItem(
+                    color = color,
+                    isSelected = usedTextColorState == color.value.toLong()
+                ) {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        context.dataStore.edit { prefs ->
+                            prefs[usedTextColorKey] = color.value.toLong()
+                        }
+                    }
+                    onColorChange(color.value.toLong())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TextFontView(
+    selectedFont: FontFamily,
+    onFontSelected: (FontFamily) -> Unit
+) {
+    val fontOptions = listOf(
+        "Led" to LedFont,
+        "Sans" to FontFamily.SansSerif,
+        "Serif" to FontFamily.Serif,
+        "Monospace" to FontFamily.Monospace,
+        "Cursive" to FontFamily.Cursive,
+    )
+
+    var expanded by remember { mutableStateOf(false) }
+    val selectedFontName = fontOptions.firstOrNull { it.second == selectedFont }?.first ?: "Seç"
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Text(
+            text = "Yazı Tipi",
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Black,
+                fontSize = 20.sp
+            ),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .background(Color.LightGray, RoundedCornerShape(8.dp))
+                .clickable { expanded = true }
+                .padding(12.dp)
+        ) {
+            Text(text = selectedFontName)
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            fontOptions.forEach { (name, fontFamily) ->
+                DropdownMenuItem(
+                    text = { Text(name, fontFamily = fontFamily) },
+                    onClick = {
+                        expanded = false
+                        onFontSelected(fontFamily)
+                    }
+                )
+            }
         }
     }
 }

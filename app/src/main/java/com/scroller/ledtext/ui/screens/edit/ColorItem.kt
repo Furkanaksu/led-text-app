@@ -31,7 +31,7 @@ fun ColorItem(
                 else
                     PaddingValues(start = 16.dp, end = 4.dp)
             )
-            .size(40.dp)
+            .size(28.dp)
             .border(
                 width = if (isSelected) 2.dp else 0.dp,
                 shape = CircleShape,
@@ -42,7 +42,7 @@ fun ColorItem(
             modifier = Modifier
                 .align(Alignment.Center)
                 .clip(shape = CircleShape)
-                .size(40.dp)
+                .size(28.dp)
                 .background(color = color)
                 .clickable {
                     onClick()
